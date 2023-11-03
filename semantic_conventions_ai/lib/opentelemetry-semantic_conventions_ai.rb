@@ -1,0 +1,1 @@
+require_relative 'opentelemetry/semantic_conventions'
