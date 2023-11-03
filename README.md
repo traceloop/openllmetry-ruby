@@ -55,18 +55,13 @@ gem install traceloop-sdk
 
 Then, to start instrumenting your code, just add this line to your code:
 
-```python
-from traceloop.sdk import Traceloop
+```ruby
+require "traceloop/sdk"
 
-Traceloop.init()
+traceloop = Traceloop::SDK::Traceloop.new
 ```
 
 That's it. You're now tracing your code with OpenLLMetry!
-If you're running this locally, you may want to disable batch sending, so you can see the traces immediately:
-
-```python
-Traceloop.init(disable_batch=True)
-```
 
 Now, you need to decide where to export the traces to.
 
@@ -86,31 +81,24 @@ See [our docs](https://traceloop.com/docs/openllmetry/integrations/exporting) fo
 
 ## 🪗 What do we instrument?
 
-OpenLLMetry can instrument everything that [OpenTelemetry already instruments](https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation) - so things like your DB, API calls, and more. On top of that, we built a set of custom extensions that instrument things like your calls to OpenAI or Anthropic, or your Vector DB like Pinecone, Chroma, or Weaviate.
+OpenLLMetry is in early-alpha exploratory stage, and we're still figuring out what to instrument.
+As opposed to other languages, there aren't many official LLM libraries (yet?), so for now you'll have to manually log prompts:
 
-### LLM Providers
+```ruby
+require "openai"
 
-- [x] OpenAI / Azure OpenAI
-- [x] Anthropic
-- [x] Cohere
-- [ ] Replicate
-- [x] HuggingFace
-- [ ] Vertex AI (GCP)
-- [ ] Bedrock (AWS)
+client = OpenAI::Client.new
 
-### Vector DBs
-
-- [x] Pinecone
-- [x] Chroma
-- [ ] Weaviate
-- [ ] Milvus
-
-### Frameworks
-
-- [x] LangChain
-- [x] [Haystack](https://haystack.deepset.ai/integrations/traceloop)
-- [x] [LiteLLM](https://docs.litellm.ai/docs/observability/traceloop_integration)
-- [ ] LlamaIndex
+traceloop.llm_call() do |tracer|
+  tracer.log_prompt(model="gpt-3.5-turbo", user_prompt="Tell me a joke about OpenTelemetry")
+  response = client.chat(
+    parameters: {
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: "Tell me a joke about OpenTelemetry" }]
+    })
+  tracer.log_response(response)
+end
+```
 
 ## 🌱 Contributing
 
@@ -124,8 +112,8 @@ Not sure where to get started? You can:
 ## 💚 Community & Support
 
 - [Slack](https://join.slack.com/t/traceloopcommunity/shared_invite/zt-1plpfpm6r-zOHKI028VkpcWdobX65C~g) (For live discussion with the community and the Traceloop team)
-- [GitHub Discussions](https://github.com/traceloop/openllmetry/discussions) (For help with building and deeper conversations about features)
-- [GitHub Issues](https://github.com/traceloop/openllmetry/issues) (For any bugs and errors you encounter using OpenLLMetry)
+- [GitHub Discussions](https://github.com/traceloop/openllmetry-ruby/discussions) (For help with building and deeper conversations about features)
+- [GitHub Issues](https://github.com/traceloop/openllmetry-ruby/issues) (For any bugs and errors you encounter using OpenLLMetry)
 - [Twitter](https://twitter.com/traceloopdev) (Get news fast)
 
 ## 🙏 Special Thanks
