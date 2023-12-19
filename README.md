@@ -6,7 +6,7 @@
 <img width="600" src="https://raw.githubusercontent.com/traceloop/openllmetry/main/img/logo-dark.png">
 </a>
 </p>
-<h1 align="center">OpenLLMetry Ruby</h1>
+<h1 align="center">For Ruby</h1>
 <p align="center">
   <p align="center">Open-source observability for your LLM application</p>
 </p>
