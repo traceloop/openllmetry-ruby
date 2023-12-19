@@ -1,6 +1,9 @@
 <p align="center">
-<a href="https://www.traceloop.com/">
-<img width="300" src="https://raw.githubusercontent.com/traceloop/openllmetry/main/img/logo.png">
+<a href="https://www.traceloop.com/openllmetry#gh-light-mode-only">
+<img width="600" src="https://raw.githubusercontent.com/traceloop/openllmetry/main/img/logo-light.png">
+</a>
+<a href="https://www.traceloop.com/openllmetry#gh-dark-mode-only">
+<img width="600" src="https://raw.githubusercontent.com/traceloop/openllmetry/main/img/logo-dark.png">
 </a>
 </p>
 <h1 align="center">OpenLLMetry Ruby</h1>
