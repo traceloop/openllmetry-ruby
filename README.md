@@ -14,23 +14,23 @@
     <a href="https://traceloop.com/docs/openllmetry/getting-started-ruby"><strong>Get started »</strong></a>
     <br />
     <br />
-  <a href="https://join.slack.com/t/traceloopcommunity/shared_invite/zt-1plpfpm6r-zOHKI028VkpcWdobX65C~g">Slack</a> |
+  <a href="https://traceloop.com/slack">Slack</a> |
   <a href="https://traceloop.com/docs/openllmetry/introduction">Docs</a> |
   <a href="https://www.traceloop.com">Website</a>
 </h4>
 
 <h4 align="center">
-   <a href="https://github.com/traceloop/openllmetry/blob/main/LICENSE">
+   <a href="https://github.com/traceloop/openllmetry-ruby/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/license-Apache 2.0-blue.svg" alt="OpenLLMetry is released under the Apache-2.0 License">
   </a>
   <a href="https://www.ycombinator.com/companies/traceloop"><img src="https://img.shields.io/website?color=%23f26522&down_message=Y%20Combinator&label=Backed&logo=ycombinator&style=flat-square&up_message=Y%20Combinator&url=https%3A%2F%2Fwww.ycombinator.com"></a>
-  <a href="https://github.com/traceloop/openllmetry/blob/main/CONTRIBUTING.md">
+  <a href="https://github.com/traceloop/openllmetry-ruby/blob/main/CONTRIBUTING.md">
     <img src="https://img.shields.io/badge/PRs-Welcome-brightgreen" alt="PRs welcome!" />
   </a>
-  <a href="https://github.com/traceloop/openllmetry/issues">
-    <img src="https://img.shields.io/github/commit-activity/m/traceloop/openllmetry" alt="git commit activity" />
+  <a href="https://github.com/traceloop/openllmetry-ruby/issues">
+    <img src="https://img.shields.io/github/commit-activity/m/traceloop/openllmetry-ruby" alt="git commit activity" />
   </a>
-  <a href="https://join.slack.com/t/traceloopcommunity/shared_invite/zt-1plpfpm6r-zOHKI028VkpcWdobX65C~g">
+  <a href="https://traceloop.com/slack">
     <img src="https://img.shields.io/badge/chat-on%20Slack-blueviolet" alt="Slack community channel" />
   </a>
   <a href="https://twitter.com/traceloopdev">
