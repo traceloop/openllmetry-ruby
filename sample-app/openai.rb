@@ -9,8 +9,8 @@ client = OpenAI::Client.new
 
 traceloop = Traceloop::SDK::Traceloop.new
 
-traceloop.llm_call() do |tracer|
-  tracer.log_prompt(model="gpt-3.5-turbo", user_prompt="Tell me a joke about OpenTelemetry")
+traceloop.llm_call(provider="openai", model="gpt-3.5-turbo") do |tracer|
+  tracer.log_prompt(user_prompt="Tell me a joke about OpenTelemetry")
   response = client.chat(
     parameters: {
       model: "gpt-3.5-turbo",

@@ -23,21 +23,50 @@ module Traceloop
       end
 
       class Tracer
-        def initialize(span)
+        def initialize(span, provider, model)
           @span = span
+          @provider = provider
+          @model = model
         end
 
-        def log_prompt(model, system_prompt="", user_prompt)
-          @span.add_attributes({
-            OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_REQUEST_MODEL => model,
-            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.role" => "system",
-            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.content" => system_prompt,
-            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.1.role" => "user",
-            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.1.content" => user_prompt
-          })
+        def log_prompt(system_prompt="", user_prompt)
+          unless system_prompt.empty?
+            @span.add_attributes({
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.role" => "system",
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.content" => system_prompt,
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.1.role" => "user",
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.1.content" => user_prompt
+            })
+          else
+            @span.add_attributes({
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.role" => "user",
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.content" => user_prompt
+            })
+          end
         end
 
         def log_response(response)
+          # This is Gemini specific, see -
+          # https://github.com/gbaptista/gemini-ai?tab=readme-ov-file#generate_content
+          if response.has_key?("candidates")
+            log_gemini_response(response)
+          else
+            log_openai_response(response)
+          end
+        end
+
+        def log_gemini_response(response)
+          @span.add_attributes({
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_RESPONSE_MODEL => @model,
+          })
+
+          @span.add_attributes({
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.role" => "assistant",
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.content" => response.dig("candidates", 0, "content", "parts", 0, "text")
+            })
+        end
+
+        def log_openai_response(response)
           @span.add_attributes({
             OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_RESPONSE_MODEL => response.dig("model"),
           })
@@ -57,9 +86,12 @@ module Traceloop
         end
       end
 
-      def llm_call
-        @tracer.in_span("openai.chat") do |span|
-          yield Tracer.new(span)
+      def llm_call(provider, model)
+        @tracer.in_span("#{provider}.chat") do |span|
+          span.add_attributes({
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_REQUEST_MODEL => model,
+          })
+          yield Tracer.new(span, provider, model)
         end
       end
     end
