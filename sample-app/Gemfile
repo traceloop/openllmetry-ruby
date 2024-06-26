@@ -6,3 +6,5 @@ gem "ruby-openai"
 gem "traceloop-sdk"
 
 gem "gemini-ai", "~> 4.1"
+
+gem "aws-sdk-bedrockruntime", "~> 1.14"

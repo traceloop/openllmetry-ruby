@@ -46,9 +46,11 @@ module Traceloop
         end
 
         def log_response(response)
+          if response.respond_to?(:body)
+            log_bedrock_response(response)
           # This is Gemini specific, see -
           # https://github.com/gbaptista/gemini-ai?tab=readme-ov-file#generate_content
-          if response.has_key?("candidates")
+          elsif response.has_key?("candidates")
             log_gemini_response(response)
           else
             log_openai_response(response)
@@ -64,6 +66,32 @@ module Traceloop
             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.role" => "assistant",
             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.content" => response.dig("candidates", 0, "content", "parts", 0, "text")
             })
+        end
+
+        def log_bedrock_response(response)
+          body = JSON.parse(response.body.read())
+
+          @span.add_attributes({
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_RESPONSE_MODEL => body.dig("model"),
+          })
+          if body.has_key?("usage")
+            input_tokens = body.dig("usage", "input_tokens")
+            output_tokens = body.dig("usage", "output_tokens")
+
+            @span.add_attributes({
+              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_TOTAL_TOKENS => input_tokens + output_tokens,
+              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_COMPLETION_TOKENS => output_tokens,
+              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_PROMPT_TOKENS => input_tokens,
+            })
+          end
+          if body.has_key?("content")
+            @span.add_attributes({
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.role" => body.dig("role"),
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.content" => body.dig("content").first.dig("text")
+            })
+          end
+
+          response.body.rewind()
         end
 
         def log_openai_response(response)
