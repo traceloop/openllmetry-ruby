@@ -122,6 +122,46 @@ module Traceloop
           yield Tracer.new(span, provider, model)
         end
       end
+
+      def workflow(name)
+        @tracer.in_span("#{name}.workflow") do |span|
+          span.add_attributes({
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::TRACELOOP_SPAN_KIND => "workflow",
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::TRACELOOP_ENTITY_NAME => name,
+          })
+          yield
+        end
+      end
+
+      def task(name)
+        @tracer.in_span("#{name}.task") do |span|
+          span.add_attributes({
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::TRACELOOP_SPAN_KIND => "task",
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::TRACELOOP_ENTITY_NAME => name,
+          })
+          yield
+        end
+      end
+
+      def agent(name)
+        @tracer.in_span("#{name}.agent") do |span|
+          span.add_attributes({
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::TRACELOOP_SPAN_KIND => "agent",
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::TRACELOOP_ENTITY_NAME => name,
+          })
+          yield
+        end
+      end
+
+      def tool(name)
+        @tracer.in_span("#{name}.tool") do |span|
+          span.add_attributes({
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::TRACELOOP_SPAN_KIND => "tool",
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::TRACELOOP_ENTITY_NAME => name,
+          })
+          yield
+        end
+      end
     end
   end
 end

@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name        = 'traceloop-sdk'
-  spec.version     = '0.0.8'
+  spec.version     = '0.1.2'
   spec.authors     = ["Traceloop"]
   spec.email       = ['dev@traceloop.com']
 
