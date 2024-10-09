@@ -29,6 +29,15 @@ module Traceloop
           @model = model
         end
 
+        def log_messages(messages)
+          messages.each_with_index do |message, index|
+            @span.add_attributes({
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.#{index}.role" => message[:role] || "user",
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.#{index}.content" => message[:content] || "",
+            })
+          end
+        end
+
         def log_prompt(system_prompt="", user_prompt)
           unless system_prompt.empty?
             @span.add_attributes({
