@@ -1,4 +1,3 @@
-
 require "opentelemetry/sdk"
 require "opentelemetry/exporter/otlp"
 require 'opentelemetry-semantic_conventions_ai'
@@ -31,9 +30,10 @@ module Traceloop
 
         def log_messages(messages)
           messages.each_with_index do |message, index|
+            content = message[:content].is_a?(Array) ? message[:content].to_json : (message[:content] || "")
             @span.add_attributes({
               "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.#{index}.role" => message[:role] || "user",
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.#{index}.content" => message[:content] || "",
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.#{index}.content" => content,
             })
           end
         end
