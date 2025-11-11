@@ -30,6 +30,15 @@ module OpenTelemetry
 
       # Deprecated
       TRACELOOP_CORRELATION_ID = "traceloop.correlation.id"
+
+      # Gen AI
+      GEN_AI_REQUEST_MODEL = "gen_ai.request.model"
+      GEN_AI_RESPONSE_MODEL = "gen_ai.response.model"
+      GEN_AI_USAGE_COMPLETION_TOKENS = "gen_ai.usage.completion_tokens"
+      GEN_AI_USAGE_PROMPT_TOKENS = "gen_ai.usage.prompt_tokens"
+      GEN_AI_COMPLETIONS = "gen_ai.completion"
+      GEN_AI_PROMPTS = "gen_ai.prompt"
+      GEN_AI_SYSTEM = "gen_ai.system"
     end
 
     module LLMRequestTypeValues
