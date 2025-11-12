@@ -8,7 +8,7 @@ module Traceloop
       def initialize
         OpenTelemetry::SDK.configure do |c|
           c.add_span_processor(
-            OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
+            OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
               OpenTelemetry::Exporter::OTLP::Exporter.new(
                 endpoint: "#{ENV.fetch("TRACELOOP_BASE_URL", "https://api.traceloop.com")}/v1/traces",
                 headers: {
@@ -61,7 +61,9 @@ module Traceloop
             log_bedrock_response(response)
           # Check for RubyLLM::Message objects
           elsif response.instance_of?(::RubyLLM::Message)
-            log_ruby_llm_response(response)
+            log_ruby_llm_message(response)
+          elsif response.instance_of?(::RubyLLM::Tool::Halt)
+            log_ruby_llm_halt(response)
           # This is Gemini specific, see -
           # https://github.com/gbaptista/gemini-ai?tab=readme-ov-file#generate_content
           elsif response.respond_to?(:has_key?) && response.has_key?("candidates")
@@ -82,36 +84,22 @@ module Traceloop
             })
         end
 
-        def log_ruby_llm_response(response)
-          model = response.respond_to?(:model_id) ? response.model_id : @model
+        def log_ruby_llm_message(response)
           @span.add_attributes({
-            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_RESPONSE_MODEL => model,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_RESPONSE_MODEL => response.model_id,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_COMPLETION_TOKENS => response.output_tokens,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_PROMPT_TOKENS => response.input_tokens,
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.role" => response.role.to_s,
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.content" => response.content
           })
+        end
 
-          if response.respond_to?(:input_tokens) && response.input_tokens &&
-             response.respond_to?(:output_tokens) && response.output_tokens
-            @span.add_attributes({
-              OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_COMPLETION_TOKENS => response.output_tokens,
-              OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_PROMPT_TOKENS => response.input_tokens,
-            })
-          end
-
-          if response.respond_to?(:content) && response.content
-            content_text = ""
-            role = response.respond_to?(:role) ? response.role.to_s : "assistant"
-
-            # Handle RubyLLM::Content object
-            if response.content.respond_to?(:text)
-              content_text = response.content.text
-            elsif response.content.respond_to?(:to_s)
-              content_text = response.content.to_s
-            end
-
-            @span.add_attributes({
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.role" => role,
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.content" => content_text
-            })
-          end
+        def log_ruby_llm_halt(response)
+          @span.add_attributes({
+             OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_RESPONSE_MODEL => @model,
+             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.role" => "tool",
+             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.content" => response.content
+          })
         end
 
         def log_bedrock_response(response)
