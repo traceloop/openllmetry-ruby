@@ -40,6 +40,7 @@ module OpenTelemetry
       GEN_AI_PROMPTS = "gen_ai.prompt"
       GEN_AI_SYSTEM = "gen_ai.system"
       GEN_AI_PROVIDER = "gen_ai.provider.name"
+      GEN_AI_CONVERSATION_ID = "gen_ai.conversation.id"
     end
 
     module LLMRequestTypeValues
