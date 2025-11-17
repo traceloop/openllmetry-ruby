@@ -63,9 +63,9 @@ module Traceloop
           if response.respond_to?(:body)
             log_bedrock_response(response)
           # Check for RubyLLM::Message objects
-          elsif response.is_a?(::RubyLLM::Message)
+          elsif defined?(::RubyLLM::Message) && response.is_a?(::RubyLLM::Message)
             log_ruby_llm_message(response)
-          elsif response.is_a?(::RubyLLM::Tool::Halt)
+          elsif defined?(::RubyLLM::Tool::Halt) && response.is_a?(::RubyLLM::Tool::Halt)
             log_ruby_llm_halt(response)
           # This is Gemini specific, see -
           # https://github.com/gbaptista/gemini-ai?tab=readme-ov-file#generate_content
