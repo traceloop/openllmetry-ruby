@@ -91,8 +91,8 @@ module Traceloop
         def log_ruby_llm_message(response)
           @span.add_attributes({
             OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_RESPONSE_MODEL => response.model_id,
-            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_COMPLETION_TOKENS => response.output_tokens || 0,
-            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_PROMPT_TOKENS => response.input_tokens || 0,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_OUTPUT_TOKENS => response.output_tokens || 0,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_INPUT_TOKENS => response.input_tokens || 0,
             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.role" => response.role.to_s,
             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.content" => response.content
           })
@@ -157,12 +157,19 @@ module Traceloop
         end
       end
 
-      def llm_call(provider, model)
+      def llm_call(provider, model, conversation_id: nil)
         @tracer.in_span("#{provider}.chat") do |span|
-          span.add_attributes({
+          attributes = {
             OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_REQUEST_MODEL => model,
-            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_SYSTEM => provider
-          })
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_SYSTEM => provider,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_PROVIDER => provider,
+          }
+
+          if conversation_id
+            attributes[OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_CONVERSATION_ID] = conversation_id
+          end
+
+          span.add_attributes(attributes)
           yield Tracer.new(span, provider, model)
         end
       end
