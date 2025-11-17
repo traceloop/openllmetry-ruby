@@ -6,16 +6,21 @@ module Traceloop
   module SDK
     class Traceloop
       def initialize
+        api_key = ENV["TRACELOOP_API_KEY"]
+        raise "TRACELOOP_API_KEY environment variable is required" if api_key.nil? || api_key.empty?
+
         OpenTelemetry::SDK.configure do |c|
           c.add_span_processor(
-            OpenTelemetry::SDK::Trace::Export::SimpleSpanProcessor.new(
+            OpenTelemetry::SDK::Trace::Export::BatchSpanProcessor.new(
               OpenTelemetry::Exporter::OTLP::Exporter.new(
                 endpoint: "#{ENV.fetch("TRACELOOP_BASE_URL", "https://api.traceloop.com")}/v1/traces",
-                headers: { "Authorization" => "Bearer #{ENV.fetch("TRACELOOP_API_KEY")}" }
+                headers: {
+                  "Authorization" => "#{ENV.fetch("TRACELOOP_AUTH_SCHEME", "Bearer")} #{ENV.fetch("TRACELOOP_API_KEY")}"
+                }
               )
             )
           )
-          puts "Traceloop exporting traces to #{ENV.fetch("TRACELOOP_BASE", "https://api.traceloop.com")}"
+          puts "Traceloop exporting traces to #{ENV.fetch("TRACELOOP_BASE_URL", "https://api.traceloop.com")}"
         end
 
         @tracer = OpenTelemetry.tracer_provider.tracer("Traceloop")
@@ -41,15 +46,15 @@ module Traceloop
         def log_prompt(system_prompt="", user_prompt)
           unless system_prompt.empty?
             @span.add_attributes({
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.role" => "system",
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.content" => system_prompt,
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.1.role" => "user",
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.1.content" => user_prompt
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_PROMPTS}.0.role" => "system",
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_PROMPTS}.0.content" => system_prompt,
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_PROMPTS}.1.role" => "user",
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_PROMPTS}.1.content" => user_prompt
             })
           else
             @span.add_attributes({
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.role" => "user",
-              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_PROMPTS}.0.content" => user_prompt
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_PROMPTS}.0.role" => "user",
+              "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_PROMPTS}.0.content" => user_prompt
             })
           end
         end
@@ -57,9 +62,14 @@ module Traceloop
         def log_response(response)
           if response.respond_to?(:body)
             log_bedrock_response(response)
+          # Check for RubyLLM::Message objects
+          elsif defined?(::RubyLLM::Message) && response.is_a?(::RubyLLM::Message)
+            log_ruby_llm_message(response)
+          elsif defined?(::RubyLLM::Tool::Halt) && response.is_a?(::RubyLLM::Tool::Halt)
+            log_ruby_llm_halt(response)
           # This is Gemini specific, see -
           # https://github.com/gbaptista/gemini-ai?tab=readme-ov-file#generate_content
-          elsif response.has_key?("candidates")
+          elsif response.respond_to?(:has_key?) && response.has_key?("candidates")
             log_gemini_response(response)
           else
             log_openai_response(response)
@@ -73,8 +83,27 @@ module Traceloop
 
           @span.add_attributes({
             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.role" => "assistant",
-            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.content" => response.dig("candidates", 0, "content", "parts", 0, "text")
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.content" => response.dig(
+"candidates", 0, "content", "parts", 0, "text")
             })
+        end
+
+        def log_ruby_llm_message(response)
+          @span.add_attributes({
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_RESPONSE_MODEL => response.model_id,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_OUTPUT_TOKENS => response.output_tokens || 0,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_USAGE_INPUT_TOKENS => response.input_tokens || 0,
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.role" => response.role.to_s,
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.content" => response.content
+          })
+        end
+
+        def log_ruby_llm_halt(response)
+          @span.add_attributes({
+             OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_RESPONSE_MODEL => @model,
+             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.role" => "tool",
+             "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_COMPLETIONS}.0.content" => response.content
+          })
         end
 
         def log_bedrock_response(response)
@@ -109,25 +138,38 @@ module Traceloop
           })
           if response.has_key?("usage")
             @span.add_attributes({
-              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_TOTAL_TOKENS => response.dig("usage", "total_tokens"),
-              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_COMPLETION_TOKENS => response.dig("usage", "completion_tokens"),
-              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_PROMPT_TOKENS => response.dig("usage", "prompt_tokens"),
+              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_TOTAL_TOKENS => response.dig("usage",
+                                                                                                           "total_tokens"),
+              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_COMPLETION_TOKENS => response.dig(
+"usage", "completion_tokens"),
+              OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_USAGE_PROMPT_TOKENS => response.dig("usage",
+                                                                                                            "prompt_tokens"),
             })
           end
           if response.has_key?("choices")
             @span.add_attributes({
-            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.role" => response.dig("choices", 0, "message", "role"),
-            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.content" => response.dig("choices", 0, "message", "content")
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.role" => response.dig(
+"choices", 0, "message", "role"),
+            "#{OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_COMPLETIONS}.0.content" => response.dig(
+"choices", 0, "message", "content")
             })
           end
         end
       end
 
-      def llm_call(provider, model)
+      def llm_call(provider, model, conversation_id: nil)
         @tracer.in_span("#{provider}.chat") do |span|
-          span.add_attributes({
-            OpenTelemetry::SemanticConventionsAi::SpanAttributes::LLM_REQUEST_MODEL => model,
-          })
+          attributes = {
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_REQUEST_MODEL => model,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_SYSTEM => provider,
+            OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_PROVIDER => provider,
+          }
+
+          if conversation_id
+            attributes[OpenTelemetry::SemanticConventionsAi::SpanAttributes::GEN_AI_CONVERSATION_ID] = conversation_id
+          end
+
+          span.add_attributes(attributes)
           yield Tracer.new(span, provider, model)
         end
       end
