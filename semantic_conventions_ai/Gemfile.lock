@@ -1,0 +1,24 @@
+PATH
+  remote: .
+  specs:
+    opentelemetry-semantic_conventions_ai (0.0.3)
+      opentelemetry-api (~> 1.0)
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    opentelemetry-api (1.7.0)
+
+PLATFORMS
+  arm64-darwin-25
+  ruby
+
+DEPENDENCIES
+  opentelemetry-semantic_conventions_ai!
+
+CHECKSUMS
+  opentelemetry-api (1.7.0) sha256=ccfd264ea6f2db5bf4185e3c07a1297977b44a944e2ce65457c4fe63a697214f
+  opentelemetry-semantic_conventions_ai (0.0.3)
+
+BUNDLED WITH
+  4.0.4
