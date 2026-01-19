@@ -17,8 +17,8 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'opentelemetry-semantic_conventions_ai', '~> 0.0.3'
 
-  spec.add_dependency 'opentelemetry-sdk', '~> 1.3.1'
-  spec.add_dependency 'opentelemetry-exporter-otlp', '~> 0.26.1'
+  spec.add_dependency 'opentelemetry-sdk', '~> 1.10'
+  spec.add_dependency 'opentelemetry-exporter-otlp', '~> 0.31'
 
   if spec.respond_to?(:metadata)
     spec.metadata['source_code_uri'] = 'https://github.com/traceloop/openllmetry-ruby/tree/main/traceloop-sdk'
