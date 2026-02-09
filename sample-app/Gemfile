@@ -7,4 +7,4 @@ gem "traceloop-sdk"
 
 gem "gemini-ai", "~> 4.3"
 
-gem "aws-sdk-bedrockruntime", "~> 1.71"
+gem "aws-sdk-bedrockruntime", "~> 1.73"

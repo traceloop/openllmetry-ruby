@@ -4,11 +4,11 @@ GEM
     addressable (2.8.8)
       public_suffix (>= 2.0.2, < 8.0)
     aws-eventstream (1.4.0)
-    aws-partitions (1.1206.0)
-    aws-sdk-bedrockruntime (1.71.0)
+    aws-partitions (1.1213.0)
+    aws-sdk-bedrockruntime (1.73.0)
       aws-sdk-core (~> 3, >= 3.241.4)
       aws-sigv4 (~> 1.5)
-    aws-sdk-core (3.241.4)
+    aws-sdk-core (3.242.0)
       aws-eventstream (~> 1, >= 1.3.0)
       aws-partitions (~> 1, >= 1.992.0)
       aws-sigv4 (~> 1.9)
@@ -36,6 +36,7 @@ GEM
       faraday (~> 2.0)
       typhoeus (~> 1.4)
     ffi (1.17.3-arm64-darwin)
+    ffi (1.17.3-x86_64-linux-gnu)
     gemini-ai (4.3.0)
       event_stream_parser (~> 1.0)
       faraday (~> 2.13, >= 2.13.2)
@@ -109,9 +110,10 @@ GEM
 PLATFORMS
   arm64-darwin-23
   arm64-darwin-25
+  x86_64-linux
 
 DEPENDENCIES
-  aws-sdk-bedrockruntime (~> 1.71)
+  aws-sdk-bedrockruntime (~> 1.73)
   gemini-ai (~> 4.3)
   ruby-openai
   traceloop-sdk
